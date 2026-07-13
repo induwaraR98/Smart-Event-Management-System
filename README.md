@@ -1,59 +1,66 @@
-# Spring Boot User Management Project
+# Smart Event Management System
 
-This project is a simple Spring Boot application that includes user authentication and basic CRUD functionality. Users can register, log in, and perform CRUD operations.
+A production-ready, feature-rich **Smart Event Management System** featuring a robust Spring Boot backend API and a modern, responsive React frontend.
 
-## Features
+## 📂 Project Structure
 
-- **User Registration**: Users can create an account with a unique username and password.
-- **Authentication**: Login functionality using Spring Security.
-- **CRUD Operations**: Basic create, read, update, and delete operations for users.
-- **Database Integration**: Supports a relational database for storing user data.
-- **Secure Password Storage**: User passwords are encrypted using industry-standard hashing algorithms.
+- **`/backend`**: The Spring Boot backend codebase. Mapped with JWT security, PostgreSQL database, QR code generation, and automated PDF ticket printing.
+- **`/frontend`**: The React client SPA scaffolded with Vite, TypeScript, and Tailwind CSS v4.
 
-## Technologies Used
+---
 
-- **Backend**: Spring Boot, Spring Security
-- **Database**: PostgreSQL
-- **Build Tool**: Maven
-- **Language**: Java
+## 🚀 Getting Started
 
-## Setup and Installation
+### 1. Prerequisite: PostgreSQL Setup
+Create a PostgreSQL database named `testuser` (or specify an existing database in `backend/src/main/resources/application.properties`):
 
-### Clone the Repository
+```sql
+CREATE DATABASE testuser;
+```
 
-Clone the repository using the following command:
+---
+
+### 2. Running the Backend API
+Navigate to the `backend/` folder and boot the Spring Boot server using the Maven wrapper:
 
 ```bash
-git clone https://github.com/induwaraR98/Spring-Authentication-and-Authorization-and-crud.git
-cd your-repository
+cd backend
+./mvnw.cmd spring-boot:run
 ```
-##Configure the Database
+- **API URL**: `http://localhost:8080`
+- **SMTP configuration**: Outbox email notifications are active using default SMTP app credentials.
 
-Open application.properties or application.yml in your project.
-Update the database configurations for PostgreSQL. Example configuration:
-properties
-Copy
-Edit
-spring.datasource.url=jdbc:postgresql://localhost:5432/your-database
-spring.datasource.username=your-username
-spring.datasource.password=your-password
-spring.jpa.hibernate.ddl-auto=update
-Replace your-database, your-username, and your-password with your actual PostgreSQL database credentials.
+---
 
-Build and Run the Application
-To build and run the application, use Maven:
+### 3. Running the React Client
+Navigate to the `frontend/` folder, install required packages, and run the Vite dev server:
 
-bash
-Copy
-Edit
-mvn spring-boot:run
-This will start the application, and you can access it at http://localhost:8080.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- **Frontend URL**: `http://localhost:5173`
 
-##Access the Application
-Once the application is running, open a browser and navigate to http://localhost:8080 to interact with it.
+---
 
-##Future Enhancements
-Implement role-based access control (RBAC).
-Add support for JWT-based authentication.
-Include pagination for user lists.
-Add unit and integration tests.
+## ⚡ Role-Based Authorization Guidelines
+
+The application supports two user roles: `ADMIN` and `USER`.
+
+- **First Registration / "admin" override**: To make it easy to start, **the very first user** registered in the database automatically receives the `ADMIN` role. Additionally, any registered user containing the word **`admin`** in their username (e.g. `admin_user`) is allocated `ADMIN` permissions.
+- **Admin Capabilities**: Add/Edit/Delete events, manage event categories, view all global bookings, and export PDF/Excel administrative reports.
+- **User Capabilities**: Search/filter events, book seats, cancel bookings, view booking logs, download ticket PDFs, save favorite events, and leave verified ratings/reviews.
+
+---
+
+## 🧪 Testing Key Scenarios
+
+1. **User Sign Up**: Create an account on the client register page (`/register`).
+2. **Category Creation**: Log in as `ADMIN` and navigate to **Categories** to add event categories (e.g., Technology, Business).
+3. **Publish Events**: Create an event as `ADMIN` with title, date, pricing, venue, and seats.
+4. **Booking Seat Deductions**: Log in as `USER` (`/login`), locate the published event, and select 2 tickets. Once confirmed, available seats automatically decrease.
+5. **PDF & Email Ticket Printing**: Check your email box! You will receive an automated HTML confirmation with a PDF attachment containing booking details and a ZXing QR Code. Download the PDF from the user dashboard to review layout.
+6. **Cancellation & Seat Restoration**: Click **Cancel** on your bookings list to restore event seats and receive a cancellation confirmation email.
+7. **Verified Rating Reviews**: After an event's date has passed, users who booked tickets can submit 1-5 star ratings and reviews. Non-attendees are restricted.
+8. **Admin Logs Export**: Log in as `ADMIN` and download Excel/PDF booking ledgers from the reports dashboard.
