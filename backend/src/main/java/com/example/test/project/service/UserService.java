@@ -34,8 +34,8 @@ public class UserService {
         }
         user.setPassword(encoder.encode(user.getPassword()));
         
-        // Dynamic role assignment: if first user or contains "admin", assign ADMIN role
-        if (repo.count() == 0 || user.getUsername().toLowerCase().contains("admin") || (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN"))) {
+        // Role assignment: set to ADMIN if explicitly requested, default to USER
+        if (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN")) {
             user.setRole("ADMIN");
         } else {
             user.setRole("USER");

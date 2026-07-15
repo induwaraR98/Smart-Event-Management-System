@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
@@ -8,6 +8,8 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState('USER');
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +27,9 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const loggedUser = await login({ username, password });
+      if (loggedUser.role !== role) {
+        throw new Error(`This account is not registered as ${role === 'ADMIN' ? 'an Admin' : 'a User'}.`);
+      }
       if (loggedUser.role === 'ADMIN') {
         navigate('/admin');
       } else {
@@ -80,19 +85,42 @@ const Login: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Sign In As</label>
+            <div className="flex items-center p-3 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
+              <Shield className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
+              <select
+                className="w-full bg-transparent border-0 outline-none focus:ring-0 text-sm text-slate-200 cursor-pointer"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                required
+              >
+                <option value="USER" className="bg-slate-900 text-slate-200">Attendee (User)</option>
+                <option value="ADMIN" className="bg-slate-900 text-slate-200">Organizer (Admin)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Password</label>
             </div>
             <div className="flex items-center p-3 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
               <Lock className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 className="w-full bg-transparent border-0 outline-none focus:ring-0 text-sm text-slate-200"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-slate-500 hover:text-slate-300 focus:outline-none ml-2 shrink-0 animate-fade-in"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

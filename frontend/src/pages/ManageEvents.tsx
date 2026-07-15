@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { PlusCircle, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import api from '../utils/api';
+import { getCleanImageUrl } from '../utils/image';
 
 interface CategoryItem {
   id: number;
@@ -18,6 +19,8 @@ const ManageEvents: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Form fields state
   const [title, setTitle] = useState('');
@@ -102,12 +105,15 @@ const ManageEvents: React.FC = () => {
     try {
       if (isEditMode) {
         await api.put(`/api/events/${id}`, payload);
-        alert('Event updated successfully!');
+        setToastMessage('Event listing updated successfully!');
       } else {
         await api.post('/api/events', payload);
-        alert('Event created successfully!');
+        setToastMessage('Event listing published successfully!');
       }
-      navigate('/admin');
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        navigate('/admin');
+      }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to save event. Please check inputs.');
     } finally {
@@ -309,13 +315,25 @@ const ManageEvents: React.FC = () => {
             <div className="flex items-center p-2.5 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
               <ImageIcon className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
               <input
-                type="url"
+                type="text"
                 placeholder="https://example.com/image.jpg"
                 className="w-full bg-transparent border-0 outline-none focus:ring-0 text-slate-200"
                 value={eventImage}
                 onChange={(e) => setEventImage(e.target.value)}
               />
             </div>
+            {eventImage && (
+              <div className="mt-2.5 relative aspect-video w-full max-w-xs overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+                <img
+                  src={getCleanImageUrl(eventImage)}
+                  alt="Event Preview"
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -334,6 +352,20 @@ const ManageEvents: React.FC = () => {
           </button>
         </form>
       </div>
+
+      {showSuccessToast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-8 rounded-3xl border border-emerald-500/30 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
+            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/5">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-extrabold text-white font-outfit">Success!</h3>
+              <p className="text-xs text-slate-400 font-medium">{toastMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

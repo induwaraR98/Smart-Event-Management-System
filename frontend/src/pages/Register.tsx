@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, User, Mail, Phone, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { UserPlus, User, Mail, Phone, Lock, AlertCircle, CheckCircle, Eye, EyeOff, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Register: React.FC = () => {
@@ -12,6 +12,9 @@ const Register: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [role, setRole] = useState('USER');
 
   const { registerUser } = useAuth();
   const navigate = useNavigate();
@@ -56,7 +59,7 @@ const Register: React.FC = () => {
 
     setLoading(true);
     try {
-      await registerUser({ username, password, email, phoneNumber });
+      await registerUser({ username, password, email, phoneNumber, role });
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
@@ -141,17 +144,40 @@ const Register: React.FC = () => {
           </div>
 
           <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Account Role</label>
+            <div className="flex items-center p-3 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
+              <Shield className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
+              <select
+                className="w-full bg-transparent border-0 outline-none focus:ring-0 text-sm text-slate-200 cursor-pointer"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                required
+              >
+                <option value="USER" className="bg-slate-900 text-slate-200">Attendee (User)</option>
+                <option value="ADMIN" className="bg-slate-900 text-slate-200">Organizer (Admin)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Password</label>
             <div className="flex items-center p-3 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
               <Lock className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="At least 6 characters"
                 className="w-full bg-transparent border-0 outline-none focus:ring-0 text-sm text-slate-200"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-slate-500 hover:text-slate-300 focus:outline-none ml-2 shrink-0 animate-fade-in"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 
@@ -160,13 +186,20 @@ const Register: React.FC = () => {
             <div className="flex items-center p-3 rounded-2xl border border-slate-800 bg-slate-900 focus-within:border-indigo-500/50 transition-all">
               <Lock className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Confirm your password"
                 className="w-full bg-transparent border-0 outline-none focus:ring-0 text-sm text-slate-200"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="text-slate-500 hover:text-slate-300 focus:outline-none ml-2 shrink-0 animate-fade-in"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
           </div>
 

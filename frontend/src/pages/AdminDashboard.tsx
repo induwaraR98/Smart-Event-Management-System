@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Calendar, Ticket, DollarSign, Plus, Settings, BarChart2, Download, Trash2, Edit2 } from 'lucide-react';
+import { Users, Calendar, Ticket, DollarSign, Plus, Settings, BarChart2, Download, Trash2, Edit2, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import api from '../utils/api';
 
 interface DashboardStats {
@@ -21,6 +21,30 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
   const fetchDashboardStats = async () => {
     try {
       const [statsRes, eventsRes] = await Promise.all([
@@ -40,17 +64,31 @@ const AdminDashboard: React.FC = () => {
     fetchDashboardStats();
   }, []);
 
-  const handleDeleteEvent = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this event? This will erase all bookings and tickets associated.')) {
-      return;
-    }
-    try {
-      await api.delete(`/api/events/${id}`);
-      alert('Event deleted successfully.');
-      fetchDashboardStats(); // Refresh
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to delete event.');
-    }
+  const handleDeleteEvent = (id: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Event',
+      message: 'Are you sure you want to delete this event? This will erase all bookings and tickets associated.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/api/events/${id}`);
+          setAlertModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Deleted',
+            message: 'Event deleted successfully.'
+          });
+          fetchDashboardStats(); // Refresh
+        } catch (err: any) {
+          setAlertModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: err.response?.data?.error || 'Failed to delete event.'
+          });
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -284,6 +322,71 @@ const AdminDashboard: React.FC = () => {
         </div>
       </section>
 
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 max-w-sm w-full text-center space-y-5 shadow-2xl animate-scale-up">
+            <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/5">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 text-center">
+              <h3 className="text-base font-extrabold text-white font-outfit">{confirmModal.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-medium mt-1">{confirmModal.message}</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900 text-xs font-bold text-slate-400 hover:text-white transition-all active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                  confirmModal.onConfirm();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all shadow-md shadow-indigo-600/15 active:scale-95 cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alertModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-lg ${
+              alertModal.type === 'success'
+                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-emerald-500/5'
+                : alertModal.type === 'error'
+                ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400 shadow-rose-500/5'
+                : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-indigo-500/5'
+            }`}>
+              {alertModal.type === 'success' ? (
+                <CheckCircle className="w-6 h-6" />
+              ) : alertModal.type === 'error' ? (
+                <XCircle className="w-6 h-6" />
+              ) : (
+                <AlertCircle className="w-6 h-6" />
+              )}
+            </div>
+            <div className="space-y-1 text-center">
+              <h3 className="text-base font-extrabold text-white font-outfit">{alertModal.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-medium mt-1">{alertModal.message}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

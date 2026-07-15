@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Download, XCircle, Heart, User, Sparkles, BookOpen } from 'lucide-react';
+import { Calendar, MapPin, Download, XCircle, Heart, User, Sparkles, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import type { EventItem } from '../components/EventCard';
+import { getCleanImageUrl } from '../utils/image';
 
 interface BookingItem {
   id: number;
@@ -23,6 +24,30 @@ const UserDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
   const fetchDashboardData = async () => {
     try {
       const res = await api.get('/api/dashboard');
@@ -41,17 +66,31 @@ const UserDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  const handleCancelBooking = async (id: number) => {
-    if (!window.confirm('Are you sure you want to cancel this booking? This will restore seats and notify the organizer.')) {
-      return;
-    }
-    try {
-      await api.post(`/api/bookings/${id}/cancel`);
-      alert('Booking cancelled successfully.');
-      fetchDashboardData(); // Refresh lists
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to cancel booking.');
-    }
+  const handleCancelBooking = (id: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Cancel Booking',
+      message: 'Are you sure you want to cancel this booking? This will restore seats and notify the organizer.',
+      onConfirm: async () => {
+        try {
+          await api.post(`/api/bookings/${id}/cancel`);
+          setAlertModal({
+            isOpen: true,
+            type: 'success',
+            title: 'Cancelled',
+            message: 'Booking cancelled successfully.'
+          });
+          fetchDashboardData();
+        } catch (err: any) {
+          setAlertModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: err.response?.data?.error || 'Failed to cancel booking.'
+          });
+        }
+      }
+    });
   };
 
   const handleDownloadTicket = async (bookingId: number, eventTitle: string) => {
@@ -69,7 +108,12 @@ const UserDashboard: React.FC = () => {
       link.remove();
     } catch (err) {
       console.error(err);
-      alert('Failed to download ticket PDF.');
+      setAlertModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Download Failed',
+        message: 'Failed to download ticket PDF.'
+      });
     }
   };
 
@@ -258,7 +302,14 @@ const UserDashboard: React.FC = () => {
                     className="glass-panel p-4 rounded-2xl border border-slate-900/80 hover:border-slate-800 hover:bg-slate-900/30 flex gap-3 group transition-all duration-200"
                   >
                     <div className="w-16 h-12 rounded-lg bg-slate-900 overflow-hidden shrink-0 border border-slate-950">
-                      <img src={rec.eventImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=100'} alt={rec.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img
+                        src={getCleanImageUrl(rec.eventImage) || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=100'}
+                        alt={rec.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=100';
+                        }}
+                      />
                     </div>
                     <div className="overflow-hidden">
                       <h4 className="font-bold text-xs text-slate-200 group-hover:text-indigo-400 line-clamp-1 block transition-colors">
@@ -275,7 +326,73 @@ const UserDashboard: React.FC = () => {
           </section>
 
         </div>
-      </div>
+    </div>
+
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 max-w-sm w-full text-center space-y-5 shadow-2xl animate-scale-up">
+            <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-amber-500/5">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 text-left text-center">
+              <h3 className="text-base font-extrabold text-white font-outfit">{confirmModal.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-medium mt-1">{confirmModal.message}</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900 text-xs font-bold text-slate-400 hover:text-white transition-all active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                  confirmModal.onConfirm();
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all shadow-md shadow-indigo-600/15 active:scale-95 cursor-pointer"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alertModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-lg ${
+              alertModal.type === 'success'
+                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-emerald-500/5'
+                : alertModal.type === 'error'
+                ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400 shadow-rose-500/5'
+                : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-indigo-500/5'
+            }`}>
+              {alertModal.type === 'success' ? (
+                <CheckCircle className="w-6 h-6" />
+              ) : alertModal.type === 'error' ? (
+                <XCircle className="w-6 h-6" />
+              ) : (
+                <AlertCircle className="w-6 h-6" />
+              )}
+            </div>
+            <div className="space-y-1 text-center">
+              <h3 className="text-base font-extrabold text-white font-outfit">{alertModal.title}</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-medium mt-1">{alertModal.message}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-all shadow-md active:scale-95 cursor-pointer"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

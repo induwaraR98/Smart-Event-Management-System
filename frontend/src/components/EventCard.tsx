@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar as CalendarIcon, MapPin, Tag } from 'lucide-react';
+import { getCleanImageUrl } from '../utils/image';
 
 export interface EventItem {
   id: number;
@@ -25,7 +26,7 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
   // Safe default image URL if none is supplied
-  const imageUrl = event.eventImage || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&auto=format&fit=crop&q=60';
+  const imageUrl = getCleanImageUrl(event.eventImage) || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&auto=format&fit=crop&q=60';
   
   // Format Date nicely
   const eventDate = new Date(event.date).toLocaleDateString('en-US', {
@@ -53,6 +54,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
           alt={event.title}
           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=500&auto=format&fit=crop&q=60';
+          }}
         />
         {/* Status Tag */}
         <span className={`absolute top-3 left-3 text-[10px] font-bold tracking-wider px-2 py-1 rounded-full border ${getStatusColor(event.status)} uppercase`}>

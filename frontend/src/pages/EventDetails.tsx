@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, User, Ticket, Star, Heart, ArrowLeft, Send } from 'lucide-react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { getCleanImageUrl } from '../utils/image';
 
 interface Review {
   id: number;
@@ -160,9 +161,12 @@ const EventDetails: React.FC = () => {
       {/* Hero Banner Section */}
       <section className="relative h-[40vh] md:h-[50vh] bg-slate-900 overflow-hidden border-b border-slate-900">
         <img
-          src={event.eventImage || defaultBanner}
+          src={getCleanImageUrl(event.eventImage) || defaultBanner}
           alt={event.title}
           className="w-full h-full object-cover opacity-40 blur-sm absolute top-0 left-0 scale-105"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = defaultBanner;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
         
@@ -290,8 +294,19 @@ const EventDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Event Logistics Card & Booking Action */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Event Cover Image */}
+          <div className="glass-panel overflow-hidden rounded-3xl border border-slate-800 shadow-xl">
+            <img
+              src={getCleanImageUrl(event.eventImage) || defaultBanner}
+              alt={event.title}
+              className="w-full aspect-video md:aspect-[4/3] object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = defaultBanner;
+              }}
+            />
+          </div>
+
           <div className="glass-panel p-6 rounded-3xl border border-slate-800/80 space-y-6">
             <h3 className="font-bold text-lg text-white font-outfit">Event Logistics</h3>
 
